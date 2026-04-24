@@ -1,0 +1,12 @@
+services:
+  mpi-search:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mpi-distributed-search:latest
+    container_name: mpi-distributed-search
+    working_dir: /app
+    volumes:
+      - ./:/app
+    tty: true
+    stdin_open: true
