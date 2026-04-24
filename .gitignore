@@ -1,0 +1,7 @@
+corpus_10gb.txt
+dist_search
+gen_text
+*.o
+src/*.o
+__pycache__/
+results/*
