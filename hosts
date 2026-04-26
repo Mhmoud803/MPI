@@ -1,0 +1,8 @@
+localhost slots=1
+mpi-worker-1 slots=1
+mpi-worker-2 slots=1
+mpi-worker-3 slots=1
+mpi-worker-4 slots=1
+mpi-worker-5 slots=1
+mpi-worker-6 slots=1
+mpi-worker-7 slots=1

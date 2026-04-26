@@ -65,3 +65,7 @@ Outputs:
 - **CLI controls:** chunk size, repeats, boundary mode, output path
 - **Performance:** machine-parseable timing and experiment CSVs
 - **Reproducibility:** one-click `run_experiments.sh` + system logs
+
+## Docker MPI Cluster Layout
+
+The Docker Compose setup now uses two networks: `frontend_net` for management/orchestration access and isolated `compute_net` for MPI data-plane traffic between cluster nodes. The `master` service joins both networks while `worker` services join only `compute_net`, and you can launch three workers with `docker compose up --scale worker=3 -d`.

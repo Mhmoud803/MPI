@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <mpi.h>
 #include "cli.h"
 
@@ -18,6 +19,7 @@ void print_usage(const char *prog) {
         "  --output FILE       Write match results to FILE (default: stdout)\n"
         "  --chunk-mb N        Per-rank read buffer size in MB (default: 64)\n"
         "  --whole-word 0|1    1=whole-word matches, 0=substring (default: 1)\n"
+        "  --expected-count N  Optional expected total matches for verification\n"
         "  --verbose           Print extra progress/debug info\n"
         "  --debug             Alias for --verbose\n"
         "  --help              Show this message\n",
@@ -38,6 +40,7 @@ void parse_args(int argc, char **argv, Config *cfg, int rank) {
     cfg->chunk_mb  = 64;
     cfg->whole_word = 1;
     cfg->verbose   = 0;
+    cfg->expected_count = -1;
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
@@ -85,6 +88,20 @@ void parse_args(int argc, char **argv, Config *cfg, int rank) {
             missing_opt = "--whole-word";
             if (++i >= argc) goto missing;
             cfg->whole_word = atoi(argv[i]) ? 1 : 0;
+
+        } else if (strcmp(argv[i], "--expected-count") == 0) {
+            char *endptr = NULL;
+            long long parsed = 0;
+            missing_opt = "--expected-count";
+            if (++i >= argc) goto missing;
+            errno = 0;
+            parsed = strtoll(argv[i], &endptr, 10);
+            if (errno != 0 || endptr == argv[i] || *endptr != '\0' || parsed < 0) {
+                if (rank == 0)
+                    fprintf(stderr, "Error: --expected-count must be a non-negative integer.\n");
+                MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+            }
+            cfg->expected_count = parsed;
 
         } else if (strcmp(argv[i], "--verbose") == 0) {
             cfg->verbose = 1;

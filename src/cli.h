@@ -14,6 +14,7 @@ typedef struct {
     int  chunk_mb;        /* --chunk-mb N : per-rank read buffer in MB */
     int  whole_word;      /* --whole-word 0|1 : enforce token boundaries */
     int  verbose;         /* --verbose    : print extra info */
+    long long expected_count; /* --expected-count N : optional verification target */
 } Config;
 
 /**

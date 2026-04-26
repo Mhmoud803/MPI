@@ -17,8 +17,7 @@ BINARY="./dist_search"
 RESULTS_DIR="results"
 VENV_PY=".venv/bin/python"
 GEN_BIN="./gen_text"
-TARGET_GB=10
-SEED_COUNT=10000
+EXPECTED_COUNT=10000000
 
 # ── Parse args ───────────────────────────────────────────────────────────────
 while [[ $# -gt 0 ]]; do
@@ -51,7 +50,7 @@ if [[ ! -f "$CORPUS" ]]; then
         echo "Generator binary missing, building it..."
         make gen
     fi
-    "$GEN_BIN" --size-gb "$TARGET_GB" --token "$TOKEN" --seed-count "$SEED_COUNT" --out "$CORPUS"
+    "$GEN_BIN"
 fi
 
 # ── System info ───────────────────────────────────────────────────────────────
@@ -88,6 +87,7 @@ for ((RUN=1; RUN<=REPEATS; RUN++)); do
         --token "$TOKEN" \
         --file  "$CORPUS" \
         --chunk-mb "$CHUNK_MB" \
+        --expected-count "$EXPECTED_COUNT" \
         --verbose \
         2> "$TIMING_TMP"
 
@@ -134,6 +134,7 @@ for NP in $NP_LIST; do
             --token "$TOKEN" \
             --file  "$CORPUS" \
             --chunk-mb "$CHUNK_MB" \
+            --expected-count "$EXPECTED_COUNT" \
             --verbose \
             2> "$TIMING_TMP"
 

@@ -24,6 +24,7 @@ run_and_assert_count_one() {
       --whole-word "$whole_word" \
       --chunk-mb 1 \
       --repeats 1 \
+      --expected-count 1 \
       >"$out_file" 2>"$err_file"
   else
     mpirun -np 2 ./dist_search \
@@ -33,6 +34,7 @@ run_and_assert_count_one() {
       --whole-word "$whole_word" \
       --chunk-mb 1 \
       --repeats 1 \
+      --expected-count 1 \
       >"$out_file" 2>"$err_file"
   fi
 
