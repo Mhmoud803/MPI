@@ -7,6 +7,9 @@
 
 set -euo pipefail
 
+# Ensure results directory exists and is writable even on mounted volumes.
+mkdir -p results && chmod 777 results
+
 # ── Defaults ────────────────────────────────────────────────────────────────
 NP_LIST="2 4 8"          # Space-separated MPI process counts to test
 REPEATS=5
@@ -19,6 +22,13 @@ VENV_PY=".venv/bin/python"
 GEN_BIN="./gen_text"
 EXPECTED_COUNT=10000000
 
+# ── Environment detection (Docker vs local) ────────────────────────────────
+MPI_FLAGS=""
+if [ -f /.dockerenv ]; then
+    MPI_FLAGS="--allow-run-as-root --hostfile hosts"
+else
+    MPI_FLAGS="--oversubscribe"
+fi
 # ── Parse args ───────────────────────────────────────────────────────────────
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -36,7 +46,7 @@ CSV_FILE="${RESULTS_DIR}/metrics.csv"
 LOG_FILE="${RESULTS_DIR}/sysinfo.txt"
 PLOT_PNG="${RESULTS_DIR}/performance_plot.png"
 PLOT_PDF="${RESULTS_DIR}/performance_plot.pdf"
-TIMING_TMP="${RESULTS_DIR}/.timing_tmp.txt"
+TIMING_TMP="/tmp/.timing_tmp.txt"
 
 # ── Sanity checks ─────────────────────────────────────────────────────────────
 if [[ ! -f "$BINARY" ]]; then
@@ -128,7 +138,7 @@ for NP in $NP_LIST; do
 
         # Print all line/col matches to terminal for every run (stdout).
         # Capture only timing lines from stderr for metrics parsing.
-        mpirun -np "$NP" "$BINARY" \
+        mpirun $MPI_FLAGS -np "$NP" "$BINARY" \
             --impl mpi \
             --repeats 1 \
             --token "$TOKEN" \

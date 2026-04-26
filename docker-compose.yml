@@ -20,6 +20,8 @@ services:
     depends_on:
       - master
     working_dir: /app
+    volumes:                # <-- ADD THIS
+      - ./:/app             # <-- ADD THIS
     tty: true
     stdin_open: true
     command: /usr/sbin/sshd -D
