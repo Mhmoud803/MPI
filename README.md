@@ -1,71 +1,65 @@
-# MPI Distributed Token Search (HPC Project)
+# MPI Distributed Text Search
 
-This project implements a distributed text search in C using MPI (SPMD model) for very large files (target: 10 GB).
+A high-performance, distributed computing project that searches for a specific substring (token) inside a massive 10 GB plain-text file. 
 
-## Build
+This project demonstrates advanced High-Performance Computing (HPC) concepts, utilizing the **Boyer-Moore-Horspool (BMH)** algorithm for sub-linear string matching and **Message Passing Interface (MPI)** for parallel execution across a containerized cluster.
 
+## Team Members
+* **Mahmoud Atef Mahmoud AbdelAziz** - Core Search Algorithm & MPI Architecture
+* **Mohamed Alaa** - Project Initialization & Data Generation
+* **Abdelrahman Osama** - Infrastructure, Testing & Visualization
+
+## Architecture Highlights
+* **Single-Pass Design:** Reads the massive dataset exactly once per rank, preventing heavy disk I/O bottlenecks.
+* **Dynamic Memory Allocation:** Stores match metadata (`local_row`, `col`, `byte_offset`) in dynamically resizing RAM arrays to prevent memory fragmentation.
+* **MPI Prefix Sum:** Uses `MPI_Exscan` to instantly calculate accurate global line numbers without requiring a pre-count pass.
+* **Deferred I/O:** Flushes all results to isolated, rank-specific text files (`matches_rank_<N>.txt`) to completely eliminate file-locking race conditions.
+
+---
+
+## Quick Start Guide
+
+### 1. Prerequisites
+This project is fully containerized to simulate a multi-node HPC cluster. You must have the following installed on your host machine:
+* [Docker](https://docs.docker.com/get-docker/)
+* [Docker Compose](https://docs.docker.com/compose/install/)
+
+### 2. Booting the Cluster
+Bring up the MPI cluster in the background using Docker Compose:
 ```bash
-make all
+docker compose up -d --scale worker=3
+```
+Attach your terminal to the master node where you will compile and run the code:
+```bash
+docker compose exec master bash
 ```
 
-This builds:
-- `dist_search` (MPI distributed search)
-- `gen_text` (large corpus generator)
-
-## Generate a large corpus
-
+### 3. Generating the Dataset
+(Inside the mpi-master container)
+Before searching, generate the 10 GB text corpus. This is handled by our custom C generator to ensure a standardized testing baseline:
 ```bash
-./gen_text --size-gb 10 --token FINDME --seed-count 1000 --out corpus.txt
+make clean
+make
 ```
 
-This also creates `corpus.txt.expected` with ground-truth `line,col` entries for seeded token positions.
-
-## Run search
-
+### 4. Running the Automated Benchmarks
+(Inside the mpi-master container)
+We have provided an automated bash script that handles compiling the MPI C code, running the sequential baseline, and executing the parallel runs across 2, 4, and 8 cores.
 ```bash
-mpirun -np 4 ./dist_search --token FINDME --file corpus.txt --chunk-mb 64
+chmod +x run_experiments.sh
+./run_experiments.sh
 ```
+Note: To force physical disk I/O and avoid the Linux RAM cache during benchmarking, you can tweak the chunk size using `--chunk-mb 64`.
 
-### Key CLI options
+## Viewing the Results
+Once the `run_experiments.sh` script completes, all outputs will be neatly organized in the `results/` directory:
 
-- `--token TOKEN` (required)
-- `--file PATH`
-- `--repeats N`
-- `--chunk-mb N`
-- `--whole-word 0|1` (`1` default; set `0` for substring mode on no-space inputs)
-- `--output FILE` (write occurrences to file)
-- `--verbose`
+* **Match Outputs:** Check `results/matches_rank_<N>.txt` to see the exact global row, column, and byte offset for every match found by a specific worker.
+* **Raw Metrics:** `results/metrics.csv` contains the exact elapsed times (in seconds) for every run.
+* **Performance Visualizations:** The pipeline automatically triggers `plot_results.py` to generate `results/scaling_plot.png` and `results/scaling_plot.pdf`. These graphs visualize the cluster's Time vs. MPI Processes and actual Speedup vs. Ideal Speedup (Amdahl's Law).
 
-## Reproducible experiments
-
-Run:
-
+## Cleanup
+To cleanly shut down the cluster and remove the network containers, run this from your host machine:
 ```bash
-bash run_experiments.sh --np "1 2 4" --repeats 5 --token FINDME --file corpus.txt --chunk-mb 64
+docker compose down
 ```
-
-Outputs:
-- `results_<timestamp>.csv` : per-run elapsed time
-- `summary_<timestamp>.csv` : per-`np` average and sample standard deviation
-- `sysinfo_<timestamp>.txt` : system/toolchain information
-
-## Notes on algorithm and correctness
-
-- File ownership is split by byte ranges across ranks.
-- Each rank streams through its full owned range in `chunk_mb` windows (memory-bounded).
-- For each window, one-byte left context and `(token_len-1)` right lookahead are read to preserve boundary correctness:
-  - whole-word boundary check at window starts
-  - matches spanning chunk/rank boundaries
-- Only matches whose **start offset** lies inside the current owned window are accepted (no duplicates).
-- Rank 0 gathers and sorts global byte offsets, then computes final line/column positions in one sequential pass over the file.
-
-## Deliverables mapping
-
-- **Code quality:** modular files under `src/`, MPI entry in `main.c`
-- **CLI controls:** chunk size, repeats, boundary mode, output path
-- **Performance:** machine-parseable timing and experiment CSVs
-- **Reproducibility:** one-click `run_experiments.sh` + system logs
-
-## Docker MPI Cluster Layout
-
-The Docker Compose setup now uses two networks: `frontend_net` for management/orchestration access and isolated `compute_net` for MPI data-plane traffic between cluster nodes. The `master` service joins both networks while `worker` services join only `compute_net`, and you can launch three workers with `docker compose up --scale worker=3 -d`.

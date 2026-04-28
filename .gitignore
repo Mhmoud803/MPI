@@ -1,7 +1,26 @@
-corpus_10gb.txt
-dist_search
-gen_text
+# Compiled Object files & Binaries
 *.o
-src/*.o
+gen_text
+mpi_search
+mpi_search_seq
+
+# Output files & Results
+results/
+matches_rank_*.txt
+*.csv
+*.png
+*.pdf
+
+# Datasets / Large text files
+*.txt
+!CMakeLists.txt
+
+# Python cache (if any used for plotting)
 __pycache__/
-results/*
+
+# OS and Editor specific
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
