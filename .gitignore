@@ -4,13 +4,6 @@ gen_text
 mpi_search
 mpi_search_seq
 
-# Output files & Results
-results/
-matches_rank_*.txt
-*.csv
-*.png
-*.pdf
-
 # Datasets / Large text files
 *.txt
 !CMakeLists.txt
