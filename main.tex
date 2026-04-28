@@ -472,6 +472,29 @@ The dominant bottleneck is disk bandwidth, not CPU. Evidence:
 \end{multicols}
 
 \vspace{0.4cm}
+
+
+% ================================================================
+%  INFRASTRUCTURE & CONTAINERIZATION
+% ================================================================
+\section{Infrastructure \& Containerization}
+
+To ensure reproducibility and simulate a realistic High-Performance Computing (HPC) environment on a single host machine, the entire MPI cluster was containerized using Docker. 
+
+\subsection{Node Configuration (Dockerfile)}
+The custom Docker image is based on Ubuntu 24.04 and installs the essential HPC stack: GCC, OpenMPI, and Python for benchmarking. A critical challenge in containerized MPI is inter-node communication. MPI relies on SSH to spawn processes on remote workers. To solve this, the \texttt{Dockerfile} automates a \textbf{passwordless SSH environment}: it generates RSA keys, populates \texttt{authorized\_keys}, and explicitly disables \texttt{StrictHostKeyChecking}. This prevents the MPI runtime from hanging on user-interaction prompts during initial connection.
+
+\subsection{Cluster Topology (Docker Compose)}
+The cluster is orchestrated via \texttt{docker-compose.yml}, defining a \texttt{master} node and scalable \texttt{worker} nodes. Two key architectural design patterns were implemented:
+
+\begin{tcolorbox}[width=\textwidth, colback=lightgray, colframe=primary, boxrule=0.8pt, arc=4pt]
+\small
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Dual-Network Isolation:} The cluster utilizes two distinct Docker bridge networks. The \texttt{frontend\_net} allows user interaction with the \texttt{mpi-master}. Meanwhile, the \texttt{compute\_net} is configured as \texttt{internal: true}. Worker nodes are isolated entirely within this internal network, mirroring the secure, dedicated backend switch topologies of real supercomputers.
+  \item \textbf{Simulated Shared Storage (NFS):} Both master and worker containers mount the host's directory as a volume (\texttt{./:/app}). This mimics a shared Network File System (NFS), ensuring all MPI ranks have immediate, unified access to the 10\,GB dataset and can write to the isolated \texttt{results/} directory without requiring SCP file transfers.
+\end{itemize}
+\end{tcolorbox}
+\vspace{0.4cm}
 \section{Conclusion}
 
 This project demonstrates a scalable, single-pass MPI distributed text search over a 10\,GB file.

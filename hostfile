@@ -1,0 +1,4 @@
+mpi-master slots=2
+mpi-worker-1 slots=2
+mpi-worker-2 slots=2
+mpi-worker-3 slots=2

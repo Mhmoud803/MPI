@@ -49,7 +49,10 @@ We have provided an automated bash script that handles compiling the MPI C code,
 chmod +x run_experiments.sh
 ./run_experiments.sh
 ```
-Note: To force physical disk I/O and avoid the Linux RAM cache during benchmarking, you can tweak the chunk size using `--chunk-mb 64`.
+Or can run speciifc configurations:
+```bash
+mpirun --hostfile hostfile -np 4 --allow-run-as-root ./dist_search --file corpus_10gb.txt --token "ManchesterUnited" --impl mpi --expected-count 10000000 --verbose
+```
 
 ## Viewing the Results
 Once the `run_experiments.sh` script completes, all outputs will be neatly organized in the `results/` directory:
